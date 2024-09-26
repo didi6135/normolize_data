@@ -39,16 +39,16 @@ def transfer_data():
         source_conn = psycopg2.connect(dbname="wwii_missions", user="postgres", password="1234", host="localhost")
         source_cur = source_conn.cursor()
 
-        # Fetch the relevant data from the 'mission' table, including mission_id
+        # Fetch the relevant data from the 'mission' table
         source_cur.execute("""
-            SELECT DISTINCT mission_id, target_country, target_city, target_type, target_industry, target_priority, target_latitude, target_longitude, mission_date
+            SELECT DISTINCT target_country, target_city, target_type, target_industry, target_priority, target_latitude, target_longitude
             FROM mission
         """)
         rows = source_cur.fetchall()
 
         # Insert the normalized data into the new database
         for row in rows:
-            mission_id, country, city, target_type, industry, priority, latitude, longitude, mission_date = row
+            country, city, target_type, industry, priority, latitude, longitude = row
 
             # Insert country if not None
             if country:
@@ -90,13 +90,13 @@ def transfer_data():
             else:
                 industry_id = None
 
-            # Insert target with mission_id if latitude, longitude, and city_id are available
+            # Insert target if latitude, longitude, and city_id are available
             if latitude and longitude and city_id:
                 source_cur.execute("""
-                    INSERT INTO target (target_priority, latitude, longitude, city_id, target_type_id, industry_id, mission_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO target (target_priority, latitude, longitude, city_id, target_type_id, industry_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING target_id
-                """, (priority, latitude, longitude, city_id, target_type_id, industry_id, mission_id))
+                """, (priority, latitude, longitude, city_id, target_type_id, industry_id))
                 target_id = source_cur.fetchone()[0]
 
         # Commit the transaction

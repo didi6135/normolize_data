@@ -3,7 +3,7 @@ from returns.result import Success, Failure
 
 from repository.mission_repository import get_all_missions, get_mission_by_id
 
-mission_blueprint = Blueprint('users', __name__)
+mission_blueprint = Blueprint('mission', __name__)
 
 
 
@@ -15,7 +15,7 @@ def get_all_missions_c():
     if isinstance(missions_result, Success):
         # Unwrap the Success value and return it
         missions = missions_result.unwrap()
-        return jsonify(missions[:50]), 200
+        return jsonify(missions[:500]), 200
     elif isinstance(missions_result, Failure):
         # Unwrap the Failure value and return an error response
         error_message = missions_result.failure()
