@@ -8,52 +8,42 @@ _________________
 EXPLAIN ANALYZE
 SELECT
     air_force,
-    EXTRACT(YEAR FROM mission_date) AS mission_year,
-    city.name AS target_city,
-    COUNT(*) AS mission_count
+    target_city AS target_city,
+    COUNT(mission_id) AS mission_count
 FROM
     mission
-JOIN
-    target ON mission.target_id::INTEGER = target.target_id  -- Explicit cast to INTEGER
-JOIN
-    city ON target.city_id = city.city_id
 WHERE
-    EXTRACT(YEAR FROM mission_date) = 1944  -- Replace %s with the desired year (e.g., 1944)
+    EXTRACT(YEAR FROM mission_date) = 1944
 GROUP BY
-    air_force, mission_year, city.name  -- Added city.name to GROUP BY
+    air_force, target_city
 ORDER BY
     mission_count DESC
-LIMIT 10;
+LIMIT 1;
+
 
 Performance before indexing:
 ___________________________
-Planning Time: 1.181 ms
-Execution Time: 68.079 ms
+Execution Time: 156.262 ms
 
 
 Creating Index:
 _______________
--- Index on the year extracted from mission_date (function index)
+
 CREATE INDEX idx_mission_year ON mission (EXTRACT(YEAR FROM mission_date));
 
--- Composite index on air_force and mission_date
-CREATE INDEX idx_air_force_mission_date ON mission (air_force, mission_date);
-
--- Composite index on air_force and target_id
-CREATE INDEX idx_air_force_target_id ON mission (air_force, target_id);
+-- אינדקס על העמודה mission_date לשיפור ביצוע הסינון על השנה
+CREATE INDEX idx_air_force_target_city ON mission (air_force, target_city);
 
 Performance after indexing:
 ___________________________
-Planning Time: 1.689 ms
-Execution Time: 9.091 ms
+Execution Time: 23.883 ms
 
 
 ----------------------
 Drop index
 ----------------------
 DROP INDEX IF EXISTS idx_mission_year;
-DROP INDEX IF EXISTS idx_air_force_mission_date;
-DROP INDEX IF EXISTS idx_air_force_target_id;
+DROP INDEX IF EXISTS idx_air_force_target_city;
 
 
 ___________________________________________________________
@@ -62,59 +52,37 @@ this is the query 2:
 _________________
 
 EXPLAIN ANALYZE
-SELECT
-    country.name AS target_country,
-    AVG(mission.attacking_aircraft::NUMERIC) AS avg_damage_assessment  -- Explicit cast to NUMERIC
-FROM
-    mission
-JOIN
-    target ON mission.target_id::INTEGER = target.target_id  -- Explicit cast to INTEGER
-JOIN
-    city ON target.city_id = city.city_id
-JOIN
-    country ON city.country_id = country.country_id
-WHERE
-    mission.airborne_aircraft > 5
-GROUP BY
-    country.name  -- Group by the target country
-ORDER BY
-    avg_damage_assessment DESC;
+select bomb_damage_assessment, count(target_country) from mission
+where bomb_damage_assessment is not null
+and airborne_aircraft > 5
+group by target_country, bomb_damage_assessment
+order by count(bomb_damage_assessment) desc limit 1
 
 
 Performance before indexing:
 ___________________________
-Planning Time: 1.427 ms
-Execution Time: 32.818 ms
+Execution Time: 29.288 ms
 
 
 Creating Index:
 _______________
--- Index for filtering on airborne_aircraft
-CREATE INDEX idx_airborne_aircraft ON mission (airborne_aircraft);
+-- אינדקס על העמודה airborne_aircraft לשיפור ביצוע ה- WHERE
+CREATE INDEX idx_mission_airborne_aircraft ON mission (airborne_aircraft);
 
--- Index on target_id to optimize the JOIN between mission and target
-CREATE INDEX idx_mission_target_id ON mission (target_id);
+-- אינדקס על העמודה bomb_damage_assessment לשיפור ביצוע הסינון והקבוצות
+CREATE INDEX idx_mission_bomb_damage_assessment ON mission (bomb_damage_assessment);
 
--- Index on city_id to optimize the JOIN between target and city
-CREATE INDEX idx_target_city_id ON target (city_id);
-
--- Index on country_id to optimize the JOIN between city and country
-CREATE INDEX idx_city_country_id ON city (country_id);
-
--- Index on country.name to optimize grouping by country.name
-CREATE INDEX idx_country_name ON country (name);
+-- אינדקס על העמודה target_country לשיפור ביצוע ה-GROUP BY
+CREATE INDEX idx_mission_target_country ON mission (target_country);
 
 
 Performance after indexing:
 ___________________________
-Planning Time: 3.015 ms
-Execution Time: 11.349 ms
+Execution Time: 0.142 ms
 
 ----------------------
 Drop index
 ----------------------
-DROP INDEX IF EXISTS idx_airborne_aircraft;
-DROP INDEX IF EXISTS idx_mission_target_id;
-DROP INDEX IF EXISTS idx_target_city_id;
-DROP INDEX IF EXISTS idx_city_country_id;
-DROP INDEX IF EXISTS idx_country_name;
+DROP INDEX IF EXISTS idx_mission_airborne_aircraft;
+DROP INDEX IF EXISTS idx_mission_bomb_damage_assessment;
+DROP INDEX IF EXISTS idx_mission_target_country;
