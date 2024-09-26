@@ -56,7 +56,7 @@ This project is designed to normalize and manage World War II mission data store
 
 1. **Clone the Repository**
     ```bash
-    git clone <repo-url>
+    git clone https://github.com/didi6135/normolize_data.git
     cd normolize_data
     ```
 
