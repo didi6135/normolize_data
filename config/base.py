@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('postgresql://postgres:1234@localhost/wwil_missions')
+engine = create_engine('postgresql://postgres:1234@localhost/wwii_missions_test')
 
 # use session_factory() to get a new Session
 _session_factory = sessionmaker(bind=engine)

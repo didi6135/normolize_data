@@ -7,7 +7,7 @@ class City(Base):
     __tablename__ = 'city'
 
     city_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100))
+    name = Column(String(100), unique=True)
     country_id = Column(Integer, ForeignKey('country.country_id'))
 
     country = relationship('Country', back_populates='cities')

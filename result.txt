@@ -1,0 +1,120 @@
+1. Find the most active air force by year and city
+
+---------------------------------------------------
+
+this is the query 1:
+_________________
+
+EXPLAIN ANALYZE
+SELECT
+    air_force,
+    EXTRACT(YEAR FROM mission_date) AS mission_year,
+    city.name AS target_city,
+    COUNT(*) AS mission_count
+FROM
+    mission
+JOIN
+    target ON mission.target_id::INTEGER = target.target_id  -- Explicit cast to INTEGER
+JOIN
+    city ON target.city_id = city.city_id
+WHERE
+    EXTRACT(YEAR FROM mission_date) = 1944  -- Replace %s with the desired year (e.g., 1944)
+GROUP BY
+    air_force, mission_year, city.name  -- Added city.name to GROUP BY
+ORDER BY
+    mission_count DESC
+LIMIT 10;
+
+Performance before indexing:
+___________________________
+Planning Time: 1.181 ms
+Execution Time: 68.079 ms
+
+
+Creating Index:
+_______________
+-- Index on the year extracted from mission_date (function index)
+CREATE INDEX idx_mission_year ON mission (EXTRACT(YEAR FROM mission_date));
+
+-- Composite index on air_force and mission_date
+CREATE INDEX idx_air_force_mission_date ON mission (air_force, mission_date);
+
+-- Composite index on air_force and target_id
+CREATE INDEX idx_air_force_target_id ON mission (air_force, target_id);
+
+Performance after indexing:
+___________________________
+Planning Time: 1.689 ms
+Execution Time: 9.091 ms
+
+
+----------------------
+Drop index
+----------------------
+DROP INDEX IF EXISTS idx_mission_year;
+DROP INDEX IF EXISTS idx_air_force_mission_date;
+DROP INDEX IF EXISTS idx_air_force_target_id;
+
+
+___________________________________________________________
+
+this is the query 2:
+_________________
+
+EXPLAIN ANALYZE
+SELECT
+    country.name AS target_country,
+    AVG(mission.attacking_aircraft::NUMERIC) AS avg_damage_assessment  -- Explicit cast to NUMERIC
+FROM
+    mission
+JOIN
+    target ON mission.target_id::INTEGER = target.target_id  -- Explicit cast to INTEGER
+JOIN
+    city ON target.city_id = city.city_id
+JOIN
+    country ON city.country_id = country.country_id
+WHERE
+    mission.airborne_aircraft > 5
+GROUP BY
+    country.name  -- Group by the target country
+ORDER BY
+    avg_damage_assessment DESC;
+
+
+Performance before indexing:
+___________________________
+Planning Time: 1.427 ms
+Execution Time: 32.818 ms
+
+
+Creating Index:
+_______________
+-- Index for filtering on airborne_aircraft
+CREATE INDEX idx_airborne_aircraft ON mission (airborne_aircraft);
+
+-- Index on target_id to optimize the JOIN between mission and target
+CREATE INDEX idx_mission_target_id ON mission (target_id);
+
+-- Index on city_id to optimize the JOIN between target and city
+CREATE INDEX idx_target_city_id ON target (city_id);
+
+-- Index on country_id to optimize the JOIN between city and country
+CREATE INDEX idx_city_country_id ON city (country_id);
+
+-- Index on country.name to optimize grouping by country.name
+CREATE INDEX idx_country_name ON country (name);
+
+
+Performance after indexing:
+___________________________
+Planning Time: 3.015 ms
+Execution Time: 11.349 ms
+
+----------------------
+Drop index
+----------------------
+DROP INDEX IF EXISTS idx_airborne_aircraft;
+DROP INDEX IF EXISTS idx_mission_target_id;
+DROP INDEX IF EXISTS idx_target_city_id;
+DROP INDEX IF EXISTS idx_city_country_id;
+DROP INDEX IF EXISTS idx_country_name;
