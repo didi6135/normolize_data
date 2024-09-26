@@ -22,6 +22,7 @@ def get_all_missions_c():
         return jsonify({'error': error_message}), 500
 
 
+
 @mission_blueprint.route('/mission/<int:mission_id>', methods=['GET'])
 def get_mission(mission_id: int):
 

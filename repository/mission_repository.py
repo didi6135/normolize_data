@@ -1,13 +1,10 @@
 from typing import List
 
-from returns.maybe import Maybe
 from returns.result import Success, Failure, Result
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import joinedload
 from config.base import session_factory
 from model.Mission import Mission
-from model.Target import Target
-from model.City import City
+
 
 
 def get_all_missions() -> Result[List[Mission], str]:

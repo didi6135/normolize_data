@@ -114,6 +114,5 @@ def transfer_data():
 def main_seed():
     # Step 1: Create the normalized tables
     create_normalized_tables()
-
     # Step 2: Transfer data from the existing 'mission' table to the new normalized tables
     transfer_data()

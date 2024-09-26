@@ -2,9 +2,6 @@
 from model.Country import Country
 
 
-
-
-
 def create_country(session, country_name):
     new_country = Country(name=country_name)
     session.add(new_country)

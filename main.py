@@ -1,16 +1,11 @@
 from flask import Flask
-from sqlalchemy import create_engine, Column, Integer, String, Float, Numeric, ForeignKey
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 
-from config.seed import main_seed
 from controller.mission_controller import mission_blueprint
 from controller.target_controller import target_blueprint
 
 app = Flask(__name__)
 
 app.register_blueprint(blueprint=mission_blueprint, url_prefix='/api')
-
 app.register_blueprint(blueprint=target_blueprint, url_prefix='/api')
 
 if __name__ == '__main__':

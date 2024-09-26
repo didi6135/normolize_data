@@ -48,6 +48,6 @@ def delete_target_c(target_id):
     result = delete_target(target_id)
 
     if isinstance(result, Success):
-        return jsonify(result.unwrap()), 200  # Return success message and status 200
+        return jsonify(result.unwrap()), 200
     elif isinstance(result, Failure):
-        return jsonify({'error': result.failure()}), 404  # Return error with status 404
+        return jsonify({'error': result.failure()}), 404
